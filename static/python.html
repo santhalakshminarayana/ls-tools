@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Run a Python snippet with the local interpreter.">
+  <title>Python runner | LS Tools</title>
+  <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/theme.js"></script>
+  <script defer src="/assets/persistence.js"></script>
+  <script defer src="/assets/editor.js"></script>
+  <script defer src="/assets/runner.js"></script>
+</head>
+<body data-language="python">
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-name" href="/">LS Tools</a>
+      <nav class="site-nav" aria-label="Tools">
+        <a href="/json">JSON</a>
+        <a href="/base64">Base64</a>
+        <a href="/jwt">JWT</a>
+        <a href="/graphql">GraphQL</a>
+        <a href="/python" aria-current="page">Python</a>
+        <a href="/go">Go</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme"></button>
+    </div>
+  </header>
+
+  <main class="page page-tool">
+    <h1 class="tool-title">Python runner</h1>
+
+    <form id="python-runner-form" class="runner" autocomplete="off">
+      <div class="field-group">
+        <label for="python-code">Python code</label>
+        <div class="code-editor-shell">
+          <div id="python-line-numbers" class="code-line-numbers" aria-hidden="true">1</div>
+          <pre id="python-highlight" class="code-highlight" aria-hidden="true"><code></code></pre>
+          <textarea id="python-code" class="code-editor" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+        </div>
+      </div>
+
+      <details class="stdin-section">
+        <summary>Standard input <span class="label-note">optional</span></summary>
+        <div class="field-group">
+          <label class="visually-hidden" for="python-stdin">Standard input</label>
+          <textarea id="python-stdin" class="stdin-editor" spellcheck="false" placeholder="Text made available to stdin"></textarea>
+        </div>
+      </details>
+
+      <div class="run-bar">
+        <button id="python-run" type="submit">Run</button>
+        <span class="keyboard-hint">Ctrl/Command + Enter</span>
+      </div>
+    </form>
+
+    <section class="output-section" aria-labelledby="python-output-label">
+      <div class="output-heading">
+        <h2 id="python-output-label">Output</h2>
+        <p id="python-status" class="run-status" role="status" aria-live="polite"></p>
+      </div>
+      <pre id="python-output" class="program-output" tabindex="0" aria-describedby="python-status"></pre>
+      <p id="python-runtime" class="runtime-path" hidden></p>
+    </section>
+  </main>
+</body>
+</html>

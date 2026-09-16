@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Run a Go snippet with the local toolchain.">
+  <title>Go runner | LS Tools</title>
+  <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/theme.js"></script>
+  <script defer src="/assets/persistence.js"></script>
+  <script defer src="/assets/editor.js"></script>
+  <script defer src="/assets/runner.js"></script>
+</head>
+<body data-language="go">
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-name" href="/">LS Tools</a>
+      <nav class="site-nav" aria-label="Tools">
+        <a href="/json">JSON</a>
+        <a href="/base64">Base64</a>
+        <a href="/jwt">JWT</a>
+        <a href="/graphql">GraphQL</a>
+        <a href="/python">Python</a>
+        <a href="/go" aria-current="page">Go</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme"></button>
+    </div>
+  </header>
+
+  <main class="page page-tool">
+    <h1 class="tool-title">Go runner</h1>
+
+    <form id="go-runner-form" class="runner" autocomplete="off">
+      <div class="field-group">
+        <label for="go-code">Go code</label>
+        <div class="code-editor-shell">
+          <div id="go-line-numbers" class="code-line-numbers" aria-hidden="true">1</div>
+          <pre id="go-highlight" class="code-highlight" aria-hidden="true"><code></code></pre>
+          <textarea id="go-code" class="code-editor" data-persist-default wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off">package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, world!")
+}</textarea>
+        </div>
+      </div>
+
+      <details class="stdin-section">
+        <summary>Standard input <span class="label-note">optional</span></summary>
+        <div class="field-group">
+          <label class="visually-hidden" for="go-stdin">Standard input</label>
+          <textarea id="go-stdin" class="stdin-editor" spellcheck="false" placeholder="Text made available to stdin"></textarea>
+        </div>
+      </details>
+
+      <div class="run-bar">
+        <button id="go-run" type="submit">Run</button>
+        <button id="go-format" class="secondary" type="button">Format</button>
+        <span class="keyboard-hint">Ctrl/Command + Enter</span>
+      </div>
+    </form>
+
+    <section class="output-section" aria-labelledby="go-output-label">
+      <div class="output-heading">
+        <h2 id="go-output-label">Output</h2>
+        <p id="go-status" class="run-status" role="status" aria-live="polite"></p>
+      </div>
+      <pre id="go-output" class="program-output" tabindex="0" aria-describedby="go-status"></pre>
+      <p id="go-runtime" class="runtime-path" hidden></p>
+    </section>
+  </main>
+</body>
+</html>

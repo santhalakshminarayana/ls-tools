@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Small local utilities for formatting data and running code.">
+  <title>LS Tools</title>
+  <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/theme.js"></script>
+  <script defer src="/assets/persistence.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-name" href="/">LS Tools</a>
+      <nav class="site-nav" aria-label="Tools">
+        <a href="/json">JSON</a>
+        <a href="/base64">Base64</a>
+        <a href="/jwt">JWT</a>
+        <a href="/graphql">GraphQL</a>
+        <a href="/python">Python</a>
+        <a href="/go">Go</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme"></button>
+    </div>
+  </header>
+
+  <main class="page page-home">
+    <h1>LS Tools</h1>
+
+    <nav class="tool-list" aria-label="Tools">
+      <a class="tool-link" href="/json">
+        <span class="tool-name">JSON formatter</span>
+        <span class="tool-description">Format, minify, validate, and search JSON.</span>
+      </a>
+      <a class="tool-link" href="/base64">
+        <span class="tool-name">Base64</span>
+        <span class="tool-description">Encode and decode text.</span>
+      </a>
+      <a class="tool-link" href="/jwt">
+        <span class="tool-name">JWT decoder</span>
+        <span class="tool-description">Decode JWT headers and payloads.</span>
+      </a>
+      <a class="tool-link" href="/graphql">
+        <span class="tool-name">GraphQL formatter</span>
+        <span class="tool-description">Format and minify GraphQL documents.</span>
+      </a>
+      <a class="tool-link" href="/python">
+        <span class="tool-name">Python runner</span>
+        <span class="tool-description">Run Python snippets.</span>
+      </a>
+      <a class="tool-link" href="/go">
+        <span class="tool-name">Go runner</span>
+        <span class="tool-description">Run Go snippets.</span>
+      </a>
+    </nav>
+  </main>
+</body>
+</html>

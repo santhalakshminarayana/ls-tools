@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Encode and decode Base64 locally.">
+  <title>Base64 | LS Tools</title>
+  <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/theme.js"></script>
+  <script defer src="/assets/persistence.js"></script>
+  <script defer src="/assets/editor.js"></script>
+  <script defer src="/assets/base64.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-name" href="/">LS Tools</a>
+      <nav class="site-nav" aria-label="Tools">
+        <a href="/json">JSON</a>
+        <a href="/base64" aria-current="page">Base64</a>
+        <a href="/jwt">JWT</a>
+        <a href="/graphql">GraphQL</a>
+        <a href="/python">Python</a>
+        <a href="/go">Go</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme"></button>
+    </div>
+  </header>
+
+  <main class="page page-tool">
+    <h1 class="tool-title">Base64</h1>
+
+    <section class="tool-section" aria-labelledby="base64-encoder-heading">
+      <h2 id="base64-encoder-heading" class="section-heading">Base64 encoder</h2>
+      <div class="button-bar" role="group" aria-label="Base64 encoder actions">
+        <button id="base64-encoder-run" type="button">Encode</button>
+        <button id="base64-encoder-copy" class="secondary" type="button">Copy output</button>
+        <button id="base64-encoder-clear" class="secondary" type="button">Clear</button>
+      </div>
+      <div class="two-pane">
+        <div class="field-group">
+          <label for="base64-encoder-input">UTF-8 text</label>
+          <textarea id="base64-encoder-input" class="data-editor compact-editor" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Text to encode"></textarea>
+        </div>
+        <div class="field-group">
+          <label for="base64-encoder-output">Base64 output</label>
+          <textarea id="base64-encoder-output" class="data-editor compact-editor" readonly spellcheck="false" aria-describedby="base64-encoder-status"></textarea>
+        </div>
+      </div>
+      <p id="base64-encoder-status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="tool-section" aria-labelledby="base64-decoder-heading">
+      <h2 id="base64-decoder-heading" class="section-heading">Base64 decoder</h2>
+      <div class="button-bar" role="group" aria-label="Base64 decoder actions">
+        <button id="base64-decoder-run" type="button">Decode</button>
+        <button id="base64-decoder-copy" class="secondary" type="button">Copy output</button>
+        <button id="base64-decoder-clear" class="secondary" type="button">Clear</button>
+      </div>
+      <div class="two-pane">
+        <div class="field-group">
+          <label for="base64-decoder-input">Base64 input</label>
+          <textarea id="base64-decoder-input" class="data-editor compact-editor" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Base64 to decode"></textarea>
+        </div>
+        <div class="field-group">
+          <label for="base64-decoder-output">UTF-8 text</label>
+          <textarea id="base64-decoder-output" class="data-editor compact-editor" readonly spellcheck="false" aria-describedby="base64-decoder-status"></textarea>
+        </div>
+      </div>
+      <p id="base64-decoder-status" class="status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+</body>
+</html>

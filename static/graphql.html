@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Format and minify GraphQL operations locally.">
+  <title>GraphQL formatter | LS Tools</title>
+  <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/theme.js"></script>
+  <script defer src="/assets/persistence.js"></script>
+  <script defer src="/assets/editor.js"></script>
+  <script defer src="/assets/graphql.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-name" href="/">LS Tools</a>
+      <nav class="site-nav" aria-label="Tools">
+        <a href="/json">JSON</a>
+        <a href="/base64">Base64</a>
+        <a href="/jwt">JWT</a>
+        <a href="/graphql" aria-current="page">GraphQL</a>
+        <a href="/python">Python</a>
+        <a href="/go">Go</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme"></button>
+    </div>
+  </header>
+
+  <main class="page page-tool">
+    <h1 class="tool-title">GraphQL formatter</h1>
+
+    <div class="button-bar" role="group" aria-label="GraphQL actions">
+      <button id="graphql-format" type="button">Format</button>
+      <button id="graphql-minify" type="button">Minify</button>
+      <span class="button-separator" aria-hidden="true"></span>
+      <button id="graphql-copy" class="secondary" type="button">Copy output</button>
+      <button id="graphql-clear" class="secondary" type="button">Clear</button>
+    </div>
+
+    <div class="two-pane">
+      <div class="field-group">
+        <label for="graphql-input">Input</label>
+        <div class="line-numbered-editor-shell">
+          <div id="graphql-input-line-numbers" class="code-line-numbers" aria-hidden="true">1</div>
+          <textarea id="graphql-input" class="data-editor graphql-editor" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="query GetUser($id: ID!) {&#10;  user(id: $id) { id name }&#10;}"></textarea>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="graphql-output">Output</label>
+        <div class="line-numbered-editor-shell is-readonly">
+          <div id="graphql-output-line-numbers" class="code-line-numbers" aria-hidden="true">1</div>
+          <textarea id="graphql-output" class="data-editor graphql-editor" wrap="off" readonly spellcheck="false" aria-describedby="graphql-status"></textarea>
+        </div>
+      </div>
+    </div>
+    <p id="graphql-status" class="status" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>

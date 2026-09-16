@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Format, minify, validate, and search JSON locally.">
+  <title>JSON formatter | LS Tools</title>
+  <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/theme.js"></script>
+  <script defer src="/assets/persistence.js"></script>
+  <script defer src="/assets/editor.js"></script>
+  <script defer src="/assets/json.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="site-name" href="/">LS Tools</a>
+      <nav class="site-nav" aria-label="Tools">
+        <a href="/json" aria-current="page">JSON</a>
+        <a href="/base64">Base64</a>
+        <a href="/jwt">JWT</a>
+        <a href="/graphql">GraphQL</a>
+        <a href="/python">Python</a>
+        <a href="/go">Go</a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme"></button>
+    </div>
+  </header>
+
+  <main class="page page-tool">
+    <h1 class="tool-title">JSON formatter</h1>
+
+    <div class="button-bar json-global-actions" role="group" aria-label="JSON workspace actions">
+      <button id="json-new" type="button">New</button>
+      <button id="json-remove-all" class="secondary" type="button" disabled>Remove all</button>
+    </div>
+
+    <input id="json-workspace-count" type="hidden" data-persist-text value="1">
+    <div id="json-workspaces"></div>
+
+    <template id="json-workspace-template">
+      <section class="json-workspace">
+        <div class="json-workspace-header">
+          <h2 data-json-role="title"></h2>
+          <button class="secondary json-workspace-remove" data-json-action="remove" type="button">Remove</button>
+        </div>
+
+        <div class="button-bar" role="group" aria-label="JSON actions">
+          <button data-json-action="format" type="button">Format</button>
+          <button data-json-action="minify" type="button">Minify</button>
+          <span class="button-separator" aria-hidden="true"></span>
+          <button data-json-action="format-source" class="secondary" type="button">Format Source</button>
+          <button data-json-action="minify-source" class="secondary" type="button">Minify Source</button>
+          <span class="button-separator" aria-hidden="true"></span>
+          <button data-json-action="copy" class="secondary" type="button">Copy output</button>
+          <button data-json-action="clear" class="secondary" type="button">Clear</button>
+        </div>
+
+        <div class="two-pane">
+          <div class="field-group">
+            <label data-json-role="source-label">Source</label>
+            <div class="json-editor-shell" data-json-role="source-shell">
+              <div class="code-line-numbers" data-json-role="input-line-numbers" aria-hidden="true">1</div>
+              <pre class="code-highlight" data-json-role="input-highlight" aria-hidden="true"><code></code></pre>
+              <div class="editor-find" data-json-role="find-widget" role="search" aria-label="Find and replace source" hidden>
+                <div class="editor-find-row">
+                  <label class="visually-hidden" data-json-role="pattern-label">Regular expression</label>
+                  <input class="editor-find-pattern" data-json-role="pattern" type="text" spellcheck="false" placeholder="Find regex">
+                  <label class="visually-hidden" data-json-role="flags-label">Regular-expression flags</label>
+                  <input class="editor-find-flags" data-json-role="flags" type="text" maxlength="4" spellcheck="false" placeholder="im" title="Optional flags: i, m, s, u">
+                  <span class="editor-find-count" data-json-role="find-count" aria-live="polite">0/0</span>
+                  <button class="editor-find-button" data-json-action="previous" type="button" aria-label="Previous match" title="Previous match (Shift+Enter)">↑</button>
+                  <button class="editor-find-button" data-json-action="next" type="button" aria-label="Next match" title="Next match (Enter)">↓</button>
+                  <button class="editor-find-button" data-json-action="close-find" type="button" aria-label="Close find" title="Close (Escape)">×</button>
+                </div>
+                <div class="editor-find-row">
+                  <label class="visually-hidden" data-json-role="replacement-label">Replacement</label>
+                  <input class="editor-find-pattern" data-json-role="replacement" type="text" spellcheck="false" placeholder="Replace">
+                  <button class="editor-find-action" data-json-action="replace" type="button">Replace</button>
+                  <button class="editor-find-action" data-json-action="replace-all" type="button">Replace All</button>
+                </div>
+              </div>
+              <textarea class="data-editor json-editor" data-json-role="input" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder='{"name": "example"}'></textarea>
+            </div>
+          </div>
+          <div class="field-group">
+            <label data-json-role="output-label">Output</label>
+            <div class="json-editor-shell" data-json-role="output-shell">
+              <div class="code-line-numbers" data-json-role="output-line-numbers" aria-hidden="true">1</div>
+              <pre class="code-highlight json-output-highlight" data-json-role="output-highlight" aria-hidden="true"><code></code></pre>
+              <textarea class="data-editor json-editor" data-json-role="output" readonly spellcheck="false"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <p class="status" data-json-role="status" role="status" aria-live="polite"></p>
+      </section>
+    </template>
+  </main>
+</body>
+</html>
