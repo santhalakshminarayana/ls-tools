@@ -17,6 +17,99 @@ The project is deliberately compact. A running instance listens only on `127.0.0
 
 All tool pages share the same navigation, theme switcher, editor behavior, draft persistence, copy fallback, responsive layout, and accessible status messages where those features apply.
 
+## Screenshots
+
+These screenshots come from a local LS Tools instance running at `127.0.0.1:8787`. They show the compact dark theme, the browser-local JSON formatter, and the two runner pages after a successful operation.
+
+| Home and browser-local tools | JSON formatter |
+| --- | --- |
+| ![LS Tools home page showing the available tools](docs/screenshots/home.png) | ![JSON formatter with compact input and formatted output](docs/screenshots/json-formatter.png) |
+
+| Python runner with standard input and output | Go runner with syntax highlighting and output |
+| --- | --- |
+| ![Python runner executing a greeting with standard input](docs/screenshots/python-runner.png) | ![Go runner executing a greeting and showing the runtime status](docs/screenshots/go-runner.png) |
+
+| Base64 encoder and decoder | JWT decoder |
+| --- | --- |
+| ![Base64 encoder and decoder showing encoded and decoded LS Tools text](docs/screenshots/base64.png) | ![JWT decoder showing decoded header and payload](docs/screenshots/jwt.png) |
+
+
+### Format JSON in the browser
+
+Open <http://127.0.0.1:8787/json>, paste compact JSON into the first workspace, and select **Format**. The transformation stays in the browser; no server-side runtime is needed.
+
+Input:
+
+```json
+{"name":"LS Tools","roles":["admin","reviewer"],"active":true}
+```
+
+The formatted output is:
+
+```json
+{
+  "name": "LS Tools",
+  "roles": [
+    "admin",
+    "reviewer"
+  ],
+  "active": true
+}
+```
+
+The same page can minify or validate the value, search within the editor, replace matches, and keep up to ten independent workspaces. Drafts are saved in browser `localStorage` and remain tied to the current server session.
+
+### Run Python with standard input
+
+Open <http://127.0.0.1:8787/python>, enter the code below, expand **Standard input**, enter `LS Tools`, and select **Run**:
+
+```python
+name = input()
+print("Hello, " + name + "!")
+```
+
+The output is:
+
+```text
+Hello, LS Tools!
+```
+
+Python is resolved only when the run is requested. The snippet runs as the current operating-system user, so this is a local convenience runner rather than a security sandbox.
+
+### Run Go with standard-library import preparation
+
+Open <http://127.0.0.1:8787/go>, paste this program, and select **Run**:
+
+```go
+package main
+
+func main() {
+	fmt.Println("Hello from LS Tools!")
+}
+```
+
+For this unambiguous standard-library selector, LS Tools can prepare the missing `fmt` import before invoking the local Go toolchain. The result is:
+
+```text
+Hello from LS Tools!
+```
+
+Use **Format** when you want to run local `gofmt` without executing the program. Go execution and formatting require the corresponding local toolchain to be available in `PATH`.
+
+### Call a runner directly over localhost
+
+The runner pages use the same JSON API that can be called from a local script. This example sends `LS Tools` as standard input to Python:
+
+```sh
+curl -sS \
+  -H 'Origin: http://127.0.0.1:8787' \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"print(input())","stdin":"LS Tools\n"}' \
+  http://127.0.0.1:8787/api/run/python
+```
+
+The response contains `stdout`, `stderr`, `exitCode`, `durationMs`, timeout state, and output-truncation flags. Requests must remain same-origin and use `application/json`; malformed or cross-origin requests are rejected before runtime discovery.
+
 ## Architecture at a glance
 
 The application has two intentionally separate planes:
@@ -61,6 +154,7 @@ The browser UI is embedded into the server binary with Go's `embed` package. The
 ├── run.sh                     Cross-platform build, readiness probe, browser launch, cleanup
 ├── Makefile                   Run, build, test, and clean targets
 ├── go.mod                     Go module declaration; currently Go 1.22
+├── docs/screenshots/          README screenshots captured from the local UI
 ├── static/
 │   ├── index.html             Home page and tool navigation
 │   ├── json.html               Dynamic JSON workspace page
