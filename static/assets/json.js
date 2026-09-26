@@ -206,10 +206,95 @@
     fragment.appendChild(token);
   }
 
-  function renderHighlight(target, source) {
+  function appendStringToken(fragment, className, value, closed, start, matchRanges) {
+    appendToken(fragment, classWithMatch("syntax-quote", start, 1, matchRanges), "\"");
+    var contentEnd = value.length - (closed ? 1 : 0);
+    if (contentEnd > 1) {
+      appendToken(fragment, className, value.slice(1, contentEnd));
+    }
+    if (closed) {
+      appendToken(fragment, classWithMatch("syntax-quote", start + value.length - 1, 1, matchRanges), "\"");
+    }
+  }
+
+  function bracketClass(brackets, character) {
+    var pairs = { "{": "}", "[": "]" };
+    if (pairs[character]) {
+      var className = "syntax-bracket syntax-bracket-" + String((brackets.length % 3) + 1);
+      brackets.push({ closer: pairs[character], className: className });
+      return className;
+    }
+    var opener = brackets[brackets.length - 1];
+    if (opener && opener.closer === character) {
+      brackets.pop();
+      return opener.className;
+    }
+    return "syntax-bracket syntax-bracket-error";
+  }
+
+  function matchingPairRanges(source, selectionStart, selectionEnd) {
+    if (selectionStart !== selectionEnd) {
+      return [];
+    }
+    var candidates = {};
+    if (selectionStart < source.length) {
+      candidates[selectionStart] = true;
+    }
+    if (selectionStart > 0) {
+      candidates[selectionStart - 1] = true;
+    }
+
+    var brackets = [];
+    var stringStart = -1;
+    var escaped = false;
+    var pairs = { "{": "}", "[": "]" };
+
+    for (var index = 0; index < source.length; index += 1) {
+      var character = source[index];
+      if (stringStart !== -1) {
+        if (escaped) {
+          escaped = false;
+        } else if (character === "\\") {
+          escaped = true;
+        } else if (character === "\"") {
+          if (candidates[stringStart] || candidates[index]) {
+            return [{ start: stringStart, end: stringStart + 1 }, { start: index, end: index + 1 }];
+          }
+          stringStart = -1;
+        }
+        continue;
+      }
+
+      if (character === "\"") {
+        stringStart = index;
+      } else if (pairs[character]) {
+        brackets.push({ character: character, index: index });
+      } else if (character === "}" || character === "]") {
+        var opener = brackets[brackets.length - 1];
+        if (opener && pairs[opener.character] === character) {
+          brackets.pop();
+          if (candidates[opener.index] || candidates[index]) {
+            return [{ start: opener.index, end: opener.index + 1 }, { start: index, end: index + 1 }];
+          }
+        }
+      }
+    }
+    return [];
+  }
+
+  function classWithMatch(className, start, length, matchRanges) {
+    var end = start + length;
+    var matches = matchRanges.some(function (range) {
+      return start < range.end && range.start < end;
+    });
+    return matches ? className + " syntax-match" : className;
+  }
+
+  function renderHighlight(target, source, matchRanges) {
     var fragment = document.createDocumentFragment();
     var plainStart = 0;
     var index = 0;
+    var brackets = [];
 
     function flushPlain(end) {
       if (end > plainStart) {
@@ -223,6 +308,7 @@
       if (source[index] === "\"") {
         tokenEnd = index + 1;
         var escaped = false;
+        var closed = false;
         while (tokenEnd < source.length) {
           var character = source[tokenEnd];
           tokenEnd += 1;
@@ -231,6 +317,7 @@
           } else if (character === "\\") {
             escaped = true;
           } else if (character === "\"") {
+            closed = true;
             break;
           }
         }
@@ -239,6 +326,17 @@
           afterString += 1;
         }
         className = source[afterString] === ":" ? "syntax-key" : "syntax-string";
+        flushPlain(index);
+        appendStringToken(fragment, className, source.slice(index, tokenEnd), closed, index, matchRanges);
+        index = tokenEnd;
+        plainStart = index;
+        continue;
+      } else if (source[index] === "{" || source[index] === "[" || source[index] === "}" || source[index] === "]") {
+        flushPlain(index);
+        appendToken(fragment, classWithMatch(bracketClass(brackets, source[index]), index, 1, matchRanges), source[index]);
+        index += 1;
+        plainStart = index;
+        continue;
       } else {
         var number = source.slice(index).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
         var literal = source.slice(index).match(/^(?:true|false|null)\b/);
@@ -334,6 +432,7 @@
     var removeButton = action("remove");
     var actionBar = root.querySelector('.button-bar[aria-label="JSON actions"]');
     var findState = { matches: [], total: 0, current: -1, tooMany: false, invalid: false };
+    var synchronizing = false;
 
     function setStatus(message, isError) {
       status.textContent = message;
@@ -353,49 +452,56 @@
     }
 
     function updateSourceHighlight() {
-      renderHighlight(inputHighlightCode, input.value);
+      renderHighlight(inputHighlightCode, input.value, matchingPairRanges(input.value, input.selectionStart, input.selectionEnd));
       updateLineNumbers(input, inputLineNumbers);
       syncScroll(input, inputHighlight, inputLineNumbers);
     }
 
     function updateOutputHighlight() {
-      renderHighlight(outputHighlightCode, output.value);
+      renderHighlight(outputHighlightCode, output.value, matchingPairRanges(output.value, output.selectionStart, output.selectionEnd));
       updateLineNumbers(output, outputLineNumbers);
       syncScroll(output, outputHighlight, outputLineNumbers);
     }
 
-    function dispatchSourceInput() {
-      input.dispatchEvent(new Event("input", { bubbles: true }));
+    function dispatchInput(field) {
+      field.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
-    function transform(indentation, sourceOnly) {
+    function synchronizeFrom(source, target) {
+      if (synchronizing || target.value === source.value) {
+        return;
+      }
+      synchronizing = true;
+      target.value = source.value;
+      dispatchInput(target);
+      synchronizing = false;
+    }
+
+    function setSynchronizedValue(value) {
+      synchronizing = true;
+      input.value = value;
+      output.value = value;
+      input.setSelectionRange(0, 0);
+      output.setSelectionRange(0, 0);
+      dispatchInput(input);
+      dispatchInput(output);
+      synchronizing = false;
+      refreshFind(0);
+    }
+
+    function transform(indentation) {
       var source = input.value;
       if (source.trim() === "") {
-        if (!sourceOnly) {
-          output.value = "";
-          updateOutputHighlight();
-        }
+        setSynchronizedValue("");
         setStatus("Enter JSON to process.", true);
         input.focus();
         return;
       }
       try {
         var transformed = JSON.stringify(JSON.parse(source), null, indentation);
-        if (sourceOnly) {
-          input.value = transformed;
-          input.setSelectionRange(0, 0);
-          dispatchSourceInput();
-          setStatus(indentation === 0 ? "Source minified." : "Source formatted.", false);
-        } else {
-          output.value = transformed;
-          updateOutputHighlight();
-          setStatus(indentation === 0 ? "JSON minified to output." : "JSON formatted to output.", false);
-        }
+        setSynchronizedValue(transformed);
+        setStatus(indentation === 0 ? "JSON minified." : "JSON formatted.", false);
       } catch (error) {
-        if (!sourceOnly) {
-          output.value = "";
-          updateOutputHighlight();
-        }
         setStatus(describeParseError(error, source), true);
       }
     }
@@ -525,7 +631,7 @@
       var nextPosition = selected.start + Math.max(0, insertedLength);
       input.value = nextSource;
       input.setSelectionRange(nextPosition, nextPosition);
-      dispatchSourceInput();
+      dispatchInput(input);
       refreshFind(nextPosition);
       setStatus("Replaced one occurrence in the source.", false);
       if (findState.total > 0 && !findState.tooMany) {
@@ -552,30 +658,23 @@
       var replacedCount = findState.total;
       input.value = input.value.replace(expression, replacement.value);
       input.setSelectionRange(0, 0);
-      dispatchSourceInput();
+      dispatchInput(input);
       refreshFind(0);
       setStatus("Replaced " + replacedCount + " occurrence" + (replacedCount === 1 ? "" : "s") + " in the source.", false);
     }
 
     function clearWorkspace() {
-      input.value = "";
-      output.value = "";
+      setSynchronizedValue("");
       pattern.value = "";
       flagsInput.value = "";
       replacement.value = "";
       findWidget.hidden = true;
-      updateSourceHighlight();
-      updateOutputHighlight();
-      refreshFind(0);
       setStatus("", false);
-      dispatchSourceInput();
       input.focus();
     }
 
-    action("format").addEventListener("click", function () { transform(2, false); });
-    action("minify").addEventListener("click", function () { transform(0, false); });
-    action("format-source").addEventListener("click", function () { transform(2, true); });
-    action("minify-source").addEventListener("click", function () { transform(0, true); });
+    action("format").addEventListener("click", function () { transform(2); });
+    action("minify").addEventListener("click", function () { transform(0); });
     action("copy").addEventListener("click", async function () {
       if (output.value === "") {
         setStatus("There is no output to copy.", true);
@@ -598,13 +697,32 @@
 
     input.addEventListener("input", function () {
       updateSourceHighlight();
+      if (synchronizing) {
+        return;
+      }
+      synchronizeFrom(input, output);
       if (!findWidget.hidden) {
         refreshFind(input.selectionStart);
       }
     });
     input.addEventListener("scroll", function () { syncScroll(input, inputHighlight, inputLineNumbers); });
-    output.addEventListener("input", updateOutputHighlight);
+    input.addEventListener("click", updateSourceHighlight);
+    input.addEventListener("keyup", updateSourceHighlight);
+    input.addEventListener("select", updateSourceHighlight);
+    output.addEventListener("input", function () {
+      updateOutputHighlight();
+      if (synchronizing) {
+        return;
+      }
+      synchronizeFrom(output, input);
+      if (!findWidget.hidden) {
+        refreshFind(input.selectionStart);
+      }
+    });
     output.addEventListener("scroll", function () { syncScroll(output, outputHighlight, outputLineNumbers); });
+    output.addEventListener("click", updateOutputHighlight);
+    output.addEventListener("keyup", updateOutputHighlight);
+    output.addEventListener("select", updateOutputHighlight);
     pattern.addEventListener("input", function () { refreshFind(input.selectionStart); });
     flagsInput.addEventListener("input", function () { refreshFind(input.selectionStart); });
     findWidget.addEventListener("keydown", function (event) {

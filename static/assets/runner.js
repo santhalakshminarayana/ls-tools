@@ -157,7 +157,152 @@
     return identifierClass(token, language, source, start, end, state);
   }
 
-  function highlightSource(source, language) {
+  function candidateTouches(candidates, start, end) {
+    return candidates.some(function (candidate) {
+      return candidate >= start && candidate < end;
+    });
+  }
+
+  function matchingPairRanges(source, language, selectionStart, selectionEnd) {
+    if (selectionStart !== selectionEnd) {
+      return [];
+    }
+    var candidates = [];
+    if (selectionStart < source.length) {
+      candidates.push(selectionStart);
+    }
+    if (selectionStart > 0) {
+      candidates.push(selectionStart - 1);
+    }
+
+    var pairs = { "(": ")", "[": "]", "{": "}" };
+    var brackets = [];
+
+    for (var index = 0; index < source.length; index += 1) {
+      var character = source[index];
+      if (language === "python" && character === "#") {
+        while (index < source.length && source[index] !== "\n" && source[index] !== "\r") {
+          index += 1;
+        }
+        continue;
+      }
+      if (language === "go" && source.slice(index, index + 2) === "//") {
+        while (index < source.length && source[index] !== "\n" && source[index] !== "\r") {
+          index += 1;
+        }
+        continue;
+      }
+      if (language === "go" && source.slice(index, index + 2) === "/*") {
+        var commentEnd = source.indexOf("*/", index + 2);
+        index = commentEnd === -1 ? source.length : commentEnd + 1;
+        continue;
+      }
+      if (character === "\"" || character === "'" || (language === "go" && character === "`")) {
+        var quoteLength = language === "python" && source.slice(index, index + 3) === character + character + character ? 3 : 1;
+        var cursor = index + quoteLength;
+        var closed = false;
+        while (cursor < source.length) {
+          if (quoteLength === 3) {
+            if (source[cursor] === "\\") {
+              cursor += 2;
+              continue;
+            }
+            if (source.slice(cursor, cursor + 3) === character + character + character) {
+              closed = true;
+              break;
+            }
+            cursor += 1;
+            continue;
+          }
+          if (character !== "`" && source[cursor] === "\\") {
+            cursor += 2;
+            continue;
+          }
+          if (source[cursor] === character) {
+            closed = true;
+            break;
+          }
+          cursor += 1;
+        }
+        if (closed && (candidateTouches(candidates, index, index + quoteLength) || candidateTouches(candidates, cursor, cursor + quoteLength))) {
+          return [{ start: index, end: index + quoteLength }, { start: cursor, end: cursor + quoteLength }];
+        }
+        index = closed ? cursor + quoteLength - 1 : source.length;
+        continue;
+      }
+      if (pairs[character]) {
+        brackets.push({ character: character, index: index });
+      } else if (character === ")" || character === "]" || character === "}") {
+        var opener = brackets[brackets.length - 1];
+        if (opener && pairs[opener.character] === character) {
+          brackets.pop();
+          if (candidates.indexOf(opener.index) !== -1 || candidates.indexOf(index) !== -1) {
+            return [{ start: opener.index, end: opener.index + 1 }, { start: index, end: index + 1 }];
+          }
+        }
+      }
+    }
+    return [];
+  }
+
+  function classWithMatch(className, start, length, matchRanges) {
+    var end = start + length;
+    var matches = matchRanges.some(function (range) {
+      return start < range.end && range.start < end;
+    });
+    return matches ? className + " syntax-match" : className;
+  }
+
+  function highlightPlain(source, start, end, matchRanges) {
+    var output = "";
+    var plainStart = start;
+    for (var index = start; index < end; index += 1) {
+      var matches = matchRanges.some(function (range) {
+        return index >= range.start && index < range.end;
+      });
+      if (matches) {
+        output += escapeHTML(source.slice(plainStart, index));
+        output += '<span class="syntax-match">' + escapeHTML(source[index]) + "</span>";
+        plainStart = index + 1;
+      }
+    }
+    return output + escapeHTML(source.slice(plainStart, end));
+  }
+
+  function highlightStringToken(token, start, language, matchRanges) {
+    var quoteIndex = -1;
+    for (var index = 0; index < token.length; index += 1) {
+      if (token[index] === "\"" || token[index] === "'" || (language === "go" && token[index] === "`")) {
+        quoteIndex = index;
+        break;
+      }
+    }
+    if (quoteIndex === -1) {
+      return '<span class="syntax-string">' + escapeHTML(token) + "</span>";
+    }
+
+    var quote = token[quoteIndex];
+    var quoteLength = language === "python" && token.slice(quoteIndex, quoteIndex + 3) === quote + quote + quote ? 3 : 1;
+    var closeStart = token.length - quoteLength;
+    var openerMatches = classWithMatch("syntax-string", start + quoteIndex, quoteLength, matchRanges).indexOf("syntax-match") !== -1;
+    var closerMatches = classWithMatch("syntax-string", start + closeStart, quoteLength, matchRanges).indexOf("syntax-match") !== -1;
+    if (!openerMatches && !closerMatches) {
+      return '<span class="syntax-string">' + escapeHTML(token) + "</span>";
+    }
+
+    var output = "";
+    if (quoteIndex > 0) {
+      output += '<span class="syntax-string">' + escapeHTML(token.slice(0, quoteIndex)) + "</span>";
+    }
+    output += '<span class="' + classWithMatch("syntax-string", start + quoteIndex, quoteLength, matchRanges) + '">' + escapeHTML(token.slice(quoteIndex, quoteIndex + quoteLength)) + "</span>";
+    if (closeStart > quoteIndex + quoteLength) {
+      output += '<span class="syntax-string">' + escapeHTML(token.slice(quoteIndex + quoteLength, closeStart)) + "</span>";
+    }
+    output += '<span class="' + classWithMatch("syntax-string", start + closeStart, quoteLength, matchRanges) + '">' + escapeHTML(token.slice(closeStart)) + "</span>";
+    return output;
+  }
+
+  function highlightSource(source, language, matchRanges) {
     var pattern = language === "python" ? pythonTokens : goTokens;
     var output = "";
     var lastIndex = 0;
@@ -166,16 +311,16 @@
 
     pattern.lastIndex = 0;
     while ((match = pattern.exec(source)) !== null) {
-      output += escapeHTML(source.slice(lastIndex, match.index));
+      output += highlightPlain(source, lastIndex, match.index, matchRanges);
       var className = tokenClass(match[0], language, source, match.index, match.index + match[0].length, state);
       if (className) {
-        output += '<span class="' + className + '">' + escapeHTML(match[0]) + "</span>";
+        output += className === "syntax-string" ? highlightStringToken(match[0], match.index, language, matchRanges) : '<span class="' + className + '">' + escapeHTML(match[0]) + "</span>";
       } else {
-        output += escapeHTML(match[0]);
+        output += highlightPlain(source, match.index, match.index + match[0].length, matchRanges);
       }
       lastIndex = match.index + match[0].length;
     }
-    output += escapeHTML(source.slice(lastIndex));
+    output += highlightPlain(source, lastIndex, source.length, matchRanges);
 
     // A final space keeps a trailing blank line visible in the overlay.
     return output + (source.endsWith("\n") ? " " : "");
@@ -213,13 +358,16 @@
     }
 
     function update() {
-      highlightedCode.innerHTML = highlightSource(textarea.value, language);
+      highlightedCode.innerHTML = highlightSource(textarea.value, language, matchingPairRanges(textarea.value, language, textarea.selectionStart, textarea.selectionEnd));
       updateLineNumbers();
       syncScroll();
     }
 
     textarea.addEventListener("input", update);
     textarea.addEventListener("scroll", syncScroll);
+    textarea.addEventListener("click", update);
+    textarea.addEventListener("keyup", update);
+    textarea.addEventListener("select", update);
     shell.classList.add("syntax-enabled");
     update();
     return update;

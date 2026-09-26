@@ -8,14 +8,16 @@ The project is deliberately compact. A running instance listens only on `127.0.0
 
 | Tool | Main operations | Where the work happens |
 | --- | --- | --- |
-| JSON formatter | Format, minify, validate, syntax-highlight, find, replace, and maintain up to ten workspaces | Browser JavaScript |
+| JSON formatter | Format, minify, validate, syntax-highlight, match structural pairs, find, replace, and maintain up to ten workspaces | Browser JavaScript |
 | Base64 | Encode UTF-8 text and decode strict Base64 into UTF-8 text | Browser JavaScript |
-| JWT decoder | Decode the header and payload of a compact JWT, including an optional `Bearer ` prefix | Browser JavaScript; signature is not verified |
-| GraphQL formatter | Parse and format executable GraphQL documents, or minify their tokens | Browser JavaScript; no schema or network validation |
-| Python runner | Run a snippet with local Python and optional standard input | Go server plus local Python interpreter |
-| Go runner | Run a snippet, infer selected standard-library imports, and format Go source | Go server plus local Go toolchain |
+| JWT decoder | Decode and syntax-highlight compact-token segments plus JSON header/payload, including an optional `Bearer ` prefix | Browser JavaScript; signature is not verified |
+| GraphQL formatter | Parse, format, minify, syntax-highlight, and match structural pairs in executable GraphQL documents | Browser JavaScript; no schema or network validation |
+| Python runner | Run a snippet with local Python and optional standard input; syntax-highlight and match code pairs | Go server plus local Python interpreter |
+| Go runner | Run a snippet, infer selected standard-library imports, format source, and match code pairs | Go server plus local Go toolchain |
 
 All tool pages share the same navigation, theme switcher, editor behavior, draft persistence, copy fallback, responsive layout, and accessible status messages where those features apply.
+
+JSON and GraphQL panes synchronize their text in both directions. Decoded JWT header and payload edits re-encode the compact token while retaining its signature segment; an edited signed token must be treated as having an invalid signature.
 
 ## Screenshots
 
@@ -153,7 +155,7 @@ The browser UI is embedded into the server binary with Go's `embed` package. The
 ├── go_prepare.go              Go AST import preparation and formatting support
 ├── run.sh                     Cross-platform build, readiness probe, browser launch, cleanup
 ├── Makefile                   Run, build, test, and clean targets
-├── go.mod                     Go module declaration; currently Go 1.22
+├── go.mod                     Go module declaration
 ├── docs/screenshots/          README screenshots captured from the local UI
 ├── static/
 │   ├── index.html             Home page and tool navigation

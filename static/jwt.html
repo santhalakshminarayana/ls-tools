@@ -33,7 +33,10 @@
 
     <div class="field-group">
       <label for="jwt-input">Encoded JWT</label>
-      <textarea id="jwt-input" class="token-editor" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="eyJhbGciOi...eyJzdWIiOi...signature"></textarea>
+      <div class="jwt-token-shell">
+        <pre id="jwt-input-highlight" class="jwt-token-highlight" aria-hidden="true"><code></code></pre>
+        <textarea id="jwt-input" class="token-editor jwt-token-editor" wrap="soft" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="eyJhbGciOi...eyJzdWIiOi...signature"></textarea>
+      </div>
     </div>
 
     <div class="button-bar" role="group" aria-label="JWT actions">
@@ -45,11 +48,19 @@
     <div class="two-pane">
       <div class="field-group">
         <label for="jwt-header">Header</label>
-        <textarea id="jwt-header" class="data-editor jwt-output" readonly spellcheck="false" aria-describedby="jwt-status"></textarea>
+        <div class="code-editor-shell jwt-json-shell">
+          <div id="jwt-header-line-numbers" class="code-line-numbers" aria-hidden="true">1</div>
+          <pre id="jwt-header-highlight" class="code-highlight" aria-hidden="true"><code></code></pre>
+          <textarea id="jwt-header" class="data-editor code-editor jwt-output" data-persist-derived wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="jwt-status"></textarea>
+        </div>
       </div>
       <div class="field-group">
         <label for="jwt-payload">Payload</label>
-        <textarea id="jwt-payload" class="data-editor jwt-output" readonly spellcheck="false" aria-describedby="jwt-status"></textarea>
+        <div class="code-editor-shell jwt-json-shell">
+          <div id="jwt-payload-line-numbers" class="code-line-numbers" aria-hidden="true">1</div>
+          <pre id="jwt-payload-highlight" class="code-highlight" aria-hidden="true"><code></code></pre>
+          <textarea id="jwt-payload" class="data-editor code-editor jwt-output" data-persist-derived wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="jwt-status"></textarea>
+        </div>
       </div>
     </div>
     <p id="jwt-status" class="status" role="status" aria-live="polite"></p>

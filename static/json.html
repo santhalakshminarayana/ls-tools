@@ -50,9 +50,6 @@
           <button data-json-action="format" type="button">Format</button>
           <button data-json-action="minify" type="button">Minify</button>
           <span class="button-separator" aria-hidden="true"></span>
-          <button data-json-action="format-source" class="secondary" type="button">Format Source</button>
-          <button data-json-action="minify-source" class="secondary" type="button">Minify Source</button>
-          <span class="button-separator" aria-hidden="true"></span>
           <button data-json-action="copy" class="secondary" type="button">Copy output</button>
           <button data-json-action="clear" class="secondary" type="button">Clear</button>
         </div>
@@ -81,7 +78,7 @@
                   <button class="editor-find-action" data-json-action="replace-all" type="button">Replace All</button>
                 </div>
               </div>
-              <textarea class="data-editor json-editor" data-json-role="input" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder='{"name": "example"}'></textarea>
+              <textarea class="data-editor json-editor" data-json-role="input" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder='{"name": "example"}'></textarea>
             </div>
           </div>
           <div class="field-group">
@@ -89,7 +86,7 @@
             <div class="json-editor-shell" data-json-role="output-shell">
               <div class="code-line-numbers" data-json-role="output-line-numbers" aria-hidden="true">1</div>
               <pre class="code-highlight json-output-highlight" data-json-role="output-highlight" aria-hidden="true"><code></code></pre>
-              <textarea class="data-editor json-editor" data-json-role="output" readonly spellcheck="false"></textarea>
+              <textarea class="data-editor json-editor" data-json-role="output" data-persist-derived wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
             </div>
           </div>
         </div>

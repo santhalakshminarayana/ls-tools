@@ -134,6 +134,7 @@ class FakeNode {
     if (selector === '.button-bar[aria-label="JSON actions"]') {
       return this.classList.contains("button-bar") && this.attributes["aria-label"] === "JSON actions";
     }
+    if (selector[0] === ".") return this.classList.contains(selector.slice(1));
     return false;
   }
 
@@ -154,6 +155,15 @@ class FakeNode {
       node = node.parentNode;
     }
     return false;
+  }
+
+  closest(selector) {
+    let node = this;
+    while (node) {
+      if (node.matches(selector)) return node;
+      node = node.parentNode;
+    }
+    return null;
   }
 
   focus() {
@@ -262,7 +272,7 @@ function buildWorkspaceTemplate(document) {
   addNode(header, "button", { action: "remove" });
 
   const actions = addNode(root, "div", { className: "button-bar", ariaLabel: "JSON actions" });
-  ["format", "minify", "format-source", "minify-source", "copy", "clear"].forEach((name) => {
+  ["format", "minify", "copy", "clear"].forEach((name) => {
     addNode(actions, "button", { action: name });
   });
 
@@ -290,7 +300,7 @@ function buildWorkspaceTemplate(document) {
   const outputShell = addNode(outputGroup, "div", { role: "output-shell" });
   const outputHighlight = addNode(outputShell, "pre", { role: "output-highlight" });
   addNode(outputHighlight, "code");
-  addNode(outputShell, "textarea", { role: "output", readOnly: true });
+  addNode(outputShell, "textarea", { role: "output" });
   addNode(root, "p", { role: "status" });
   return fragment;
 }
@@ -310,6 +320,22 @@ function click(element) {
 function input(element) {
   element.dispatchEvent(new FakeEvent("input", { bubbles: true }));
 }
+
+test("syntax-overlay editors use matching wrapping rules to keep text and carets aligned", () => {
+  const jsonPage = fs.readFileSync(path.join(__dirname, "../static/json.html"), "utf8");
+  const jwtPage = fs.readFileSync(path.join(__dirname, "../static/jwt.html"), "utf8");
+  const styles = fs.readFileSync(path.join(__dirname, "../static/assets/styles.css"), "utf8");
+
+  assert.match(jsonPage, /data-json-role="input" wrap="off"/);
+  assert.match(jsonPage, /data-json-role="output" data-persist-derived wrap="off"/);
+  assert.match(jwtPage, /id="jwt-input"[^>]*wrap="soft"/);
+  assert.match(jwtPage, /id="jwt-header"[^>]*wrap="off"/);
+  assert.match(jwtPage, /id="jwt-payload"[^>]*wrap="off"/);
+  assert.match(styles, /\.jwt-token-shell \.jwt-token-editor,[\s\S]*?overflow-wrap: anywhere;[\s\S]*?white-space: pre-wrap;[\s\S]*?word-break: break-all;/);
+  assert.match(styles, /\.json-editor-shell \.code-highlight \{[\s\S]*?overflow: auto;/);
+  assert.match(styles, /\.code-editor-shell \.code-highlight \{[\s\S]*?overflow: auto;/);
+  assert.match(styles, /\.jwt-token-shell \.jwt-token-highlight \{[\s\S]*?overflow: auto;/);
+});
 
 function buildPage() {
   const document = new FakeDocument();
@@ -336,6 +362,7 @@ test("JSON workspaces add up to ten and remove individually or globally", () => 
   assert.equal(page.container.children.length, 1);
   assert.equal(page.removeAll.disabled, true);
   assert.equal(action(page.container.children[0], "remove").disabled, true);
+  assert.equal(role(page.container.children[0], "output").readOnly, false);
 
   role(page.container.children[0], "input").value = "keep first";
   for (let index = 1; index < 10; index += 1) click(page.newButton);
@@ -361,8 +388,10 @@ test("each JSON workspace formats and diagnoses independently", () => {
   const second = page.container.children[1];
   role(first, "input").value = '{"name":"first","active":true}';
   input(role(first, "input"));
+  assert.equal(role(first, "output").value, role(first, "input").value);
   click(action(first, "format"));
   assert.match(role(first, "output").value, /\n  "name": "first"/);
+  assert.equal(role(first, "input").value, role(first, "output").value);
   assert.equal(role(second, "output").value, "");
 
   role(second, "input").value = '{"name":"second",}';
@@ -376,6 +405,24 @@ test("each JSON workspace formats and diagnoses independently", () => {
   assert.ok(tokenClasses.includes("syntax-key"));
   assert.ok(tokenClasses.includes("syntax-string"));
   assert.ok(tokenClasses.includes("syntax-literal"));
+  assert.ok(tokenClasses.includes("syntax-quote"));
+  assert.ok(tokenClasses.some((className) => className.includes("syntax-bracket-1")));
+
+  role(first, "input").setSelectionRange(0, 0);
+  input(role(first, "input"));
+  const bracketMatches = role(first, "input-highlight").querySelector("code").children
+    .filter((node) => node.className.includes("syntax-bracket-1") && node.className.includes("syntax-match"));
+  assert.equal(bracketMatches.length, 2);
+
+  role(first, "input").setSelectionRange(role(first, "input").value.indexOf("\""), role(first, "input").value.indexOf("\""));
+  input(role(first, "input"));
+  const quoteMatches = role(first, "input-highlight").querySelector("code").children
+    .filter((node) => node.className.includes("syntax-quote") && node.className.includes("syntax-match"));
+  assert.equal(quoteMatches.length, 2);
+
+  role(first, "output").value = '{"name":"edited"}';
+  input(role(first, "output"));
+  assert.equal(role(first, "input").value, '{"name":"edited"}');
 });
 
 test("find and replace stays scoped to its active workspace", () => {
@@ -410,4 +457,154 @@ test("find and replace stays scoped to its active workspace", () => {
   role(second, "replacement").value = "b";
   click(action(second, "replace-all"));
   assert.equal(source.value, "b".repeat(101));
+});
+
+test("GraphQL overlays syntax, matching brackets, and quotes in both panes", () => {
+  const document = new FakeDocument();
+  global.document = document;
+  global.window = { isSecureContext: false };
+  Object.defineProperty(globalThis, "navigator", { value: {}, writable: true, configurable: true });
+  global.Event = FakeEvent;
+
+  function addGraphQLElement(id, tagName, parent, options) {
+    const node = addNode(parent, tagName, options);
+    node.id = id;
+    document.elements.set(id, node);
+    return node;
+  }
+
+  const inputShell = addNode(document.body, "div", { className: "code-editor-shell graphql-editor-shell" });
+  addGraphQLElement("graphql-input-line-numbers", "div", inputShell);
+  const inputHighlight = addGraphQLElement("graphql-input-highlight", "pre", inputShell);
+  addNode(inputHighlight, "code");
+  const input = addGraphQLElement("graphql-input", "textarea", inputShell, { className: "code-editor graphql-editor" });
+  input.value = "# Fetch a user\nquery GetUser($id: ID!) @skip(if: false) {\n  user(id: $id, includePosts: true) {\n    greeting(message: \"Hello\")\n  }\n}";
+
+  const outputShell = addNode(document.body, "div", { className: "code-editor-shell graphql-editor-shell" });
+  addGraphQLElement("graphql-output-line-numbers", "div", outputShell);
+  const outputHighlight = addGraphQLElement("graphql-output-highlight", "pre", outputShell);
+  addNode(outputHighlight, "code");
+  const output = addGraphQLElement("graphql-output", "textarea", outputShell, { className: "code-editor graphql-editor" });
+  const format = document.add("graphql-format", "button");
+  document.add("graphql-minify", "button");
+  document.add("graphql-copy", "button");
+  document.add("graphql-clear", "button");
+  document.add("graphql-status", "p");
+
+  const source = fs.readFileSync(path.join(__dirname, "../static/assets/graphql.js"), "utf8");
+  vm.runInThisContext(source, { filename: "graphql.js" });
+
+  const inputClasses = inputHighlight.querySelector("code").children.map((node) => node.className).filter(Boolean);
+  assert.ok(inputClasses.includes("syntax-comment"));
+  assert.ok(inputClasses.includes("syntax-keyword"));
+  assert.ok(inputClasses.includes("syntax-operation"));
+  assert.ok(inputClasses.includes("syntax-field"));
+  assert.ok(inputClasses.includes("syntax-property"));
+  assert.ok(inputClasses.includes("syntax-type"));
+  assert.ok(inputClasses.includes("syntax-variable"));
+  assert.ok(inputClasses.includes("syntax-decorator"));
+  assert.ok(inputClasses.includes("syntax-literal"));
+  assert.ok(inputClasses.includes("syntax-quote"));
+  assert.ok(inputClasses.includes("syntax-string"));
+  assert.ok(inputClasses.some((className) => className.includes("syntax-bracket-1")));
+  assert.equal(inputShell.classList.contains("syntax-enabled"), true);
+
+  input.setSelectionRange(input.value.indexOf("{"), input.value.indexOf("{"));
+  input.dispatchEvent(new FakeEvent("click"));
+  const bracketMatches = inputHighlight.querySelector("code").children
+    .filter((node) => node.className.includes("syntax-bracket-1") && node.className.includes("syntax-match"));
+  assert.equal(bracketMatches.length, 2);
+
+  input.setSelectionRange(input.value.indexOf("\"Hello\""), input.value.indexOf("\"Hello\""));
+  input.dispatchEvent(new FakeEvent("click"));
+  const quoteMatches = inputHighlight.querySelector("code").children
+    .filter((node) => node.className.includes("syntax-quote") && node.className.includes("syntax-match"));
+  assert.equal(quoteMatches.length, 2);
+
+  click(format);
+  assert.match(output.value, /query GetUser/);
+  assert.equal(output.readOnly, false);
+  assert.equal(input.value, output.value);
+  const outputClasses = outputHighlight.querySelector("code").children.map((node) => node.className).filter(Boolean);
+  assert.ok(outputClasses.includes("syntax-quote"));
+  assert.ok(outputClasses.some((className) => className.includes("syntax-bracket-1")));
+
+  output.value = "query Changed { viewer { id } }";
+  output.dispatchEvent(new FakeEvent("input", { bubbles: true }));
+  assert.equal(input.value, output.value);
+});
+
+test("JWT highlights token segments and decoded JSON pairs", () => {
+  const document = new FakeDocument();
+  global.document = document;
+  global.window = { isSecureContext: false };
+  Object.defineProperty(globalThis, "navigator", { value: {}, writable: true, configurable: true });
+  global.Event = FakeEvent;
+
+  function addJWTElement(id, tagName, parent, options) {
+    const node = addNode(parent, tagName, options);
+    node.id = id;
+    document.elements.set(id, node);
+    return node;
+  }
+
+  const tokenShell = addNode(document.body, "div", { className: "jwt-token-shell" });
+  const tokenHighlight = addJWTElement("jwt-input-highlight", "pre", tokenShell);
+  addNode(tokenHighlight, "code");
+  const token = addJWTElement("jwt-input", "textarea", tokenShell, { className: "token-editor jwt-token-editor" });
+  token.value = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.signature";
+
+  function addJSONPane(name) {
+    const shell = addNode(document.body, "div", { className: "code-editor-shell jwt-json-shell" });
+    addJWTElement("jwt-" + name + "-line-numbers", "div", shell);
+    const highlight = addJWTElement("jwt-" + name + "-highlight", "pre", shell);
+    addNode(highlight, "code");
+    const editor = addJWTElement("jwt-" + name, "textarea", shell, { className: "code-editor jwt-output" });
+    return { highlight, editor };
+  }
+
+  const header = addJSONPane("header");
+  const payload = addJSONPane("payload");
+  const decode = document.add("jwt-decode", "button");
+  document.add("jwt-copy-payload", "button");
+  document.add("jwt-clear", "button");
+  document.add("jwt-status", "p");
+
+  const source = fs.readFileSync(path.join(__dirname, "../static/assets/jwt.js"), "utf8");
+  vm.runInThisContext(source, { filename: "jwt.js" });
+
+  const tokenClasses = tokenHighlight.querySelector("code").children.map((node) => node.className).filter(Boolean);
+  assert.ok(tokenClasses.includes("syntax-jwt-header"));
+  assert.ok(tokenClasses.includes("syntax-jwt-payload"));
+  assert.ok(tokenClasses.includes("syntax-jwt-signature"));
+  assert.ok(tokenClasses.includes("syntax-jwt-separator"));
+
+  click(decode);
+  assert.match(header.editor.value, /"alg": "HS256"/);
+  assert.match(payload.editor.value, /"name": "John Doe"/);
+  assert.equal(header.editor.readOnly, false);
+  assert.equal(payload.editor.readOnly, false);
+  const headerClasses = header.highlight.querySelector("code").children.map((node) => node.className).filter(Boolean);
+  assert.ok(headerClasses.includes("syntax-key"));
+  assert.ok(headerClasses.includes("syntax-string"));
+  assert.ok(headerClasses.includes("syntax-quote"));
+
+  header.editor.setSelectionRange(0, 0);
+  header.editor.dispatchEvent(new FakeEvent("click"));
+  const bracketMatches = header.highlight.querySelector("code").children
+    .filter((node) => node.className.includes("syntax-bracket-1") && node.className.includes("syntax-match"));
+  assert.equal(bracketMatches.length, 2);
+
+  header.editor.setSelectionRange(header.editor.value.indexOf("\""), header.editor.value.indexOf("\""));
+  header.editor.dispatchEvent(new FakeEvent("click"));
+  const quoteMatches = header.highlight.querySelector("code").children
+    .filter((node) => node.className.includes("syntax-quote") && node.className.includes("syntax-match"));
+  assert.equal(quoteMatches.length, 2);
+
+  const originalToken = token.value;
+  header.editor.value = header.editor.value.replace("HS256", "none");
+  header.editor.dispatchEvent(new FakeEvent("input", { bubbles: true }));
+  assert.notEqual(token.value, originalToken);
+  assert.match(Buffer.from(token.value.split(".")[0], "base64url").toString("utf8"), /"alg":"none"/);
+  assert.equal(document.getElementById("jwt-status").dataset.state, "warning");
 });
