@@ -47,15 +47,24 @@ function storageWith(initial) {
   };
 }
 
-async function loadPersistence({ serverID, stored, initialValue, preserveDefault }) {
+async function loadPersistence({ serverID, stored, initialValue, preserveDefault, pending }) {
   const listeners = new Map();
   const windowListeners = new Map();
   const field = new FakeTextArea("json-input", initialValue);
   if (preserveDefault) field.dataset.persistDefault = "";
+  const pendingEditor = pending ? {
+    removedAttributes: [],
+    removeAttribute(name) {
+      this.removedAttributes.push(name);
+    }
+  } : null;
   const document = {
     readyState: "complete",
     visibilityState: "visible",
-    querySelectorAll() {
+    querySelectorAll(selector) {
+      if (selector === "[data-persist-pending]") {
+        return pendingEditor ? [pendingEditor] : [];
+      }
       return [field];
     },
     addEventListener(type, listener) {
@@ -100,6 +109,7 @@ async function loadPersistence({ serverID, stored, initialValue, preserveDefault
 
   return {
     field,
+    pendingEditor,
     document,
     localStorage,
     pagehide() {
@@ -170,4 +180,23 @@ test("a declared editor scaffold survives a new server session", async () => {
     preserveDefault: true
   });
   assert.equal(page.field.value, "package main\n\nfunc main() {}\n");
+});
+
+test("a pending default editor is released only after its empty draft is restored", async () => {
+  const key = "ls-tools-drafts-v1";
+  const stored = JSON.stringify({
+    sessionID: "server-one",
+    updatedAt: Date.now(),
+    pages: { "/json": { "json-input": "" } }
+  });
+  const page = await loadPersistence({
+    serverID: "server-one",
+    stored: { [key]: stored },
+    initialValue: "package main\n\nfunc main() {}\n",
+    preserveDefault: true,
+    pending: true
+  });
+
+  assert.equal(page.field.value, "");
+  assert.deepEqual(page.pendingEditor.removedAttributes, ["data-persist-pending", "aria-busy"]);
 });

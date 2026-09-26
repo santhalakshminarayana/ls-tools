@@ -11,7 +11,8 @@
 
   function textFields() {
     return Array.prototype.filter.call(document.querySelectorAll("textarea[id], input[data-persist-text][id]"), function (field) {
-      return !field.disabled;
+      var derived = field.dataset && Object.prototype.hasOwnProperty.call(field.dataset, "persistDerived");
+      return !field.disabled && !derived;
     });
   }
 
@@ -87,6 +88,15 @@
     // persisted editors during the first pass.
     applyFields();
     applying = false;
+  }
+
+  function releasePendingEditors() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-persist-pending]"), function (editor) {
+      if (typeof editor.removeAttribute === "function") {
+        editor.removeAttribute("data-persist-pending");
+        editor.removeAttribute("aria-busy");
+      }
+    });
   }
 
   function pageSnapshot() {
@@ -179,6 +189,8 @@
       }
     } catch (error) {
       // Keep the page usable if the local session check is unavailable.
+    } finally {
+      releasePendingEditors();
     }
   }
 

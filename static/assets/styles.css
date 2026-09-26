@@ -40,6 +40,37 @@
   --syntax-comment: #5f6368;
   --syntax-keyword: #7b1fa2;
   --syntax-decorator: #185abc;
+  --syntax-quote: #a31515;
+  --syntax-punctuation: #5f6368;
+  --syntax-variable: #185abc;
+  --syntax-bracket-1: #185abc;
+  --syntax-bracket-2: #7b1fa2;
+  --syntax-bracket-3: #b06000;
+  --syntax-match-background: rgba(251, 188, 4, 0.24);
+  --syntax-match-border: #b06000;
+
+  --jwt-syntax-header: #c5221f;
+  --jwt-syntax-payload: #7b1fa2;
+  --jwt-syntax-signature: #005fbb;
+  --jwt-syntax-separator: #5f6368;
+
+  --graphql-syntax-comment: #5f6368;
+  --graphql-syntax-keyword: #7b1fa2;
+  --graphql-syntax-operation: #9a3412;
+  --graphql-syntax-fragment: #9333ea;
+  --graphql-syntax-field: #005fbb;
+  --graphql-syntax-property: #00796b;
+  --graphql-syntax-type: #006d77;
+  --graphql-syntax-variable: #7e22ce;
+  --graphql-syntax-directive: #c2185b;
+  --graphql-syntax-string: #b54708;
+  --graphql-syntax-quote: #9f1239;
+  --graphql-syntax-number: #008a6c;
+  --graphql-syntax-literal: #7c3aed;
+  --graphql-syntax-punctuation: #5f6368;
+  --graphql-syntax-bracket-1: #005cbb;
+  --graphql-syntax-bracket-2: #7e22ce;
+  --graphql-syntax-bracket-3: #b45309;
 
   /* VS Code Light+ palette used only by the Python and Go editors. */
   --code-syntax-comment: #008000;
@@ -99,6 +130,37 @@
   --syntax-comment: #9aa0a6;
   --syntax-keyword: #c58af9;
   --syntax-decorator: #8ab4f8;
+  --syntax-quote: #ce9178;
+  --syntax-punctuation: #d4d4d4;
+  --syntax-variable: #9cdcfe;
+  --syntax-bracket-1: #4ec9b0;
+  --syntax-bracket-2: #c586c0;
+  --syntax-bracket-3: #dcdcaa;
+  --syntax-match-background: rgba(255, 213, 79, 0.25);
+  --syntax-match-border: #fdd663;
+
+  --jwt-syntax-header: #ff6b8a;
+  --jwt-syntax-payload: #c792ea;
+  --jwt-syntax-signature: #56b6c2;
+  --jwt-syntax-separator: #abb2bf;
+
+  --graphql-syntax-comment: #abb2bf;
+  --graphql-syntax-keyword: #c792ea;
+  --graphql-syntax-operation: #e5c07b;
+  --graphql-syntax-fragment: #f78c6c;
+  --graphql-syntax-field: #61afef;
+  --graphql-syntax-property: #56b6c2;
+  --graphql-syntax-type: #4ec9b0;
+  --graphql-syntax-variable: #c792ea;
+  --graphql-syntax-directive: #ff79c6;
+  --graphql-syntax-string: #e5c07b;
+  --graphql-syntax-quote: #ff8a80;
+  --graphql-syntax-number: #98c379;
+  --graphql-syntax-literal: #c792ea;
+  --graphql-syntax-punctuation: #abb2bf;
+  --graphql-syntax-bracket-1: #61afef;
+  --graphql-syntax-bracket-2: #c792ea;
+  --graphql-syntax-bracket-3: #e5c07b;
 
   /* VS Code Dark+ palette used only by the Python and Go editors. */
   --code-syntax-comment: #6a9955;
@@ -475,6 +537,11 @@ textarea[readonly] {
   color: var(--success);
 }
 
+.status[data-state="warning"],
+.run-status[data-state="warning"] {
+  color: var(--warning);
+}
+
 .json-global-actions {
   margin-bottom: 18px;
 }
@@ -527,7 +594,7 @@ textarea[readonly] {
   z-index: 0;
   inset: 0;
   display: none;
-  overflow: hidden;
+  overflow: auto;
   padding-left: 60px;
   border: 1px solid transparent;
   border-radius: 2px;
@@ -537,7 +604,7 @@ textarea[readonly] {
 }
 
 .json-output-highlight {
-  background: var(--editor-readonly-bg);
+  background: var(--editor-bg);
 }
 
 .json-editor-shell.syntax-enabled .code-highlight {
@@ -556,6 +623,7 @@ textarea[readonly] {
   color: transparent;
   caret-color: var(--text);
   overflow-wrap: normal;
+  overflow: auto;
 }
 
 .json-editor-shell.syntax-enabled .json-editor::selection {
@@ -568,7 +636,7 @@ textarea[readonly] {
 }
 
 .json-editor-shell[data-json-role="output-shell"] .code-line-numbers {
-  background: var(--editor-readonly-bg);
+  background: var(--editor-bg);
 }
 
 .syntax-key {
@@ -586,6 +654,45 @@ textarea[readonly] {
 .syntax-literal {
   color: var(--syntax-literal);
   font-weight: 600;
+}
+
+.syntax-quote {
+  color: var(--syntax-quote);
+}
+
+.syntax-punctuation {
+  color: var(--syntax-punctuation);
+}
+
+.syntax-variable {
+  color: var(--syntax-variable);
+}
+
+.syntax-bracket {
+  font-weight: 600;
+}
+
+.syntax-bracket-1 {
+  color: var(--syntax-bracket-1);
+}
+
+.syntax-bracket-2 {
+  color: var(--syntax-bracket-2);
+}
+
+.syntax-bracket-3 {
+  color: var(--syntax-bracket-3);
+}
+
+.syntax-bracket-error {
+  color: var(--error);
+}
+
+.syntax-match {
+  outline: 1px solid var(--syntax-match-border);
+  outline-offset: -1px;
+  background: var(--syntax-match-background);
+  border-radius: 2px;
 }
 
 /* The same overlay vocabulary is shared by the Python and Go editors. */
@@ -617,23 +724,16 @@ textarea[readonly] {
   pointer-events: none;
 }
 
-.line-numbered-editor-shell {
-  position: relative;
-}
-
-.line-numbered-editor-shell .code-line-numbers {
-  display: block;
-}
-
-.line-numbered-editor-shell .graphql-editor {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  padding-left: 60px;
-}
-
-.line-numbered-editor-shell.is-readonly .code-line-numbers {
+.code-editor-shell.is-readonly .code-line-numbers,
+.code-editor-shell.is-readonly .code-highlight {
   background: var(--editor-readonly-bg);
+}
+
+/* The Go sample is withheld until its session-scoped draft has been restored. */
+.code-editor-shell[data-persist-pending] .code-editor,
+.code-editor-shell[data-persist-pending] .code-highlight,
+.code-editor-shell[data-persist-pending] .code-line-numbers {
+  visibility: hidden;
 }
 
 .code-editor-shell .code-highlight {
@@ -642,7 +742,7 @@ textarea[readonly] {
   inset: 0;
   display: none;
   margin: 0;
-  overflow: hidden;
+  overflow: auto;
   padding: 12px 12px 12px 60px;
   border: 1px solid transparent;
   border-radius: 2px;
@@ -672,6 +772,7 @@ textarea[readonly] {
   background: transparent;
   color: transparent;
   caret-color: var(--text);
+  overflow: auto;
   white-space: pre;
 }
 
@@ -732,6 +833,203 @@ textarea[readonly] {
 
 .code-editor-shell .syntax-magic {
   color: var(--code-syntax-magic);
+}
+
+/* GraphQL uses a dedicated semantic palette. The generic Python/Go palette
+   intentionally does not leak into operation, field, argument, or type text. */
+.graphql-editor-shell .syntax-comment {
+  color: var(--graphql-syntax-comment);
+}
+
+.graphql-editor-shell .syntax-keyword {
+  color: var(--graphql-syntax-keyword);
+}
+
+.graphql-editor-shell .syntax-operation {
+  color: var(--graphql-syntax-operation);
+}
+
+.graphql-editor-shell .syntax-fragment {
+  color: var(--graphql-syntax-fragment);
+}
+
+.graphql-editor-shell .syntax-field {
+  color: var(--graphql-syntax-field);
+}
+
+.graphql-editor-shell .syntax-property {
+  color: var(--graphql-syntax-property);
+}
+
+.graphql-editor-shell .syntax-type {
+  color: var(--graphql-syntax-type);
+}
+
+.graphql-editor-shell .syntax-variable {
+  color: var(--graphql-syntax-variable);
+}
+
+.graphql-editor-shell .syntax-decorator {
+  color: var(--graphql-syntax-directive);
+}
+
+.graphql-editor-shell .syntax-string {
+  color: var(--graphql-syntax-string);
+}
+
+.graphql-editor-shell .syntax-quote {
+  color: var(--graphql-syntax-quote);
+}
+
+.graphql-editor-shell .syntax-number {
+  color: var(--graphql-syntax-number);
+}
+
+.graphql-editor-shell .syntax-literal {
+  color: var(--graphql-syntax-literal);
+}
+
+.graphql-editor-shell .syntax-punctuation {
+  color: var(--graphql-syntax-punctuation);
+}
+
+.graphql-editor-shell .syntax-bracket-1 {
+  color: var(--graphql-syntax-bracket-1);
+}
+
+.graphql-editor-shell .syntax-bracket-2 {
+  color: var(--graphql-syntax-bracket-2);
+}
+
+.graphql-editor-shell .syntax-bracket-3 {
+  color: var(--graphql-syntax-bracket-3);
+}
+
+/* JWT keeps the compact token and decoded JSON visually separate, like jwt.io. */
+.jwt-token-shell {
+  position: relative;
+  min-height: 112px;
+}
+
+.jwt-token-shell .jwt-token-editor,
+.jwt-token-shell .jwt-token-highlight {
+  min-height: 112px;
+  margin: 0;
+  padding: 12px;
+  font-family: var(--code-font);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.jwt-token-shell .jwt-token-highlight {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: none;
+  overflow: auto;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: var(--editor-bg);
+  color: var(--text);
+  pointer-events: none;
+}
+
+.jwt-token-shell.syntax-enabled .jwt-token-highlight {
+  display: block;
+}
+
+.jwt-token-shell.syntax-enabled .jwt-token-editor {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text);
+  overflow: auto;
+}
+
+.json-editor-shell .code-highlight,
+.code-editor-shell .code-highlight,
+.jwt-token-shell .jwt-token-highlight {
+  scrollbar-color: transparent transparent;
+}
+
+.json-editor-shell .code-highlight::-webkit-scrollbar,
+.code-editor-shell .code-highlight::-webkit-scrollbar,
+.jwt-token-shell .jwt-token-highlight::-webkit-scrollbar,
+.json-editor-shell .code-highlight::-webkit-scrollbar-track,
+.code-editor-shell .code-highlight::-webkit-scrollbar-track,
+.jwt-token-shell .jwt-token-highlight::-webkit-scrollbar-track,
+.json-editor-shell .code-highlight::-webkit-scrollbar-thumb,
+.code-editor-shell .code-highlight::-webkit-scrollbar-thumb,
+.jwt-token-shell .jwt-token-highlight::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.jwt-token-shell.syntax-enabled .jwt-token-editor::selection {
+  background: var(--selection);
+  color: transparent;
+}
+
+.jwt-token-shell .syntax-jwt-header {
+  color: var(--jwt-syntax-header);
+}
+
+.jwt-token-shell .syntax-jwt-payload {
+  color: var(--jwt-syntax-payload);
+}
+
+.jwt-token-shell .syntax-jwt-signature {
+  color: var(--jwt-syntax-signature);
+}
+
+.jwt-token-shell .syntax-jwt-separator {
+  color: var(--jwt-syntax-separator);
+  font-weight: 700;
+}
+
+.jwt-token-shell .syntax-jwt-prefix {
+  color: var(--jwt-syntax-separator);
+  font-weight: 600;
+}
+
+.code-editor-shell.jwt-json-shell {
+  min-height: 280px;
+}
+
+.jwt-json-shell .syntax-key {
+  color: var(--syntax-key);
+}
+
+.jwt-json-shell .syntax-string {
+  color: var(--syntax-string);
+}
+
+.jwt-json-shell .syntax-number {
+  color: var(--syntax-number);
+}
+
+.jwt-json-shell .syntax-literal {
+  color: var(--syntax-literal);
+  font-weight: 600;
+}
+
+.jwt-json-shell .syntax-quote {
+  color: var(--syntax-quote);
+}
+
+.jwt-json-shell .syntax-bracket-1 {
+  color: var(--syntax-bracket-1);
+}
+
+.jwt-json-shell .syntax-bracket-2 {
+  color: var(--syntax-bracket-2);
+}
+
+.jwt-json-shell .syntax-bracket-3 {
+  color: var(--syntax-bracket-3);
 }
 
 /* Compact, editor-local find/replace controls. */

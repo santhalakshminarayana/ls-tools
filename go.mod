@@ -1,3 +1,3 @@
-module localtools
+module github.com/santhalakshminarayana/ls-tools
 
-go 1.22
+go 1.27

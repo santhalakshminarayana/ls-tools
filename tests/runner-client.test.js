@@ -17,6 +17,8 @@ class FakeElement {
     this.disabled = false;
     this.scrollTop = 0;
     this.scrollLeft = 0;
+    this.selectionStart = typeof values.selectionStart === "number" ? values.selectionStart : 0;
+    this.selectionEnd = typeof values.selectionEnd === "number" ? values.selectionEnd : this.selectionStart;
     this.listeners = {};
     this.closestValues = {};
     this.queryValues = {};
@@ -39,8 +41,8 @@ class FakeElement {
   }
 }
 
-function renderHighlight(language, source) {
-  const code = new FakeElement({ value: source });
+function renderHighlight(language, source, selectionStart) {
+  const code = new FakeElement({ value: source, selectionStart, selectionEnd: selectionStart });
   const stdin = new FakeElement();
   const run = new FakeElement({ textContent: "Run" });
   const format = language === "go" ? new FakeElement({ textContent: "Format" }) : null;
@@ -139,4 +141,22 @@ func main() {
   assertToken(html, "syntax-string", '"hello"');
   assertToken(html, "syntax-literal", "true");
   assertToken(html, "syntax-number", "42");
+});
+
+test("Python and Go runners mark matching structural and quote pairs", () => {
+  const python = 'value = {"label": "LS Tools"}\n# { ignored }\n';
+  const pythonBrackets = renderHighlight("python", python, python.indexOf("{"));
+  assert.equal((pythonBrackets.match(/<span class="syntax-match">[{}]<\/span>/g) || []).length, 2);
+  const pythonQuotes = renderHighlight("python", python, python.indexOf("\""));
+  assert.equal((pythonQuotes.match(/<span class="syntax-string syntax-match">"<\/span>/g) || []).length, 2);
+  const pythonComment = renderHighlight("python", python, python.lastIndexOf("{"));
+  assert.doesNotMatch(pythonComment, /syntax-match/);
+
+  const go = 'func main() { values := []string{"go"} }\n// [ ignored ]\n';
+  const goBrackets = renderHighlight("go", go, go.indexOf("["));
+  assert.equal((goBrackets.match(/<span class="syntax-match">[\[\]]<\/span>/g) || []).length, 2);
+  const goQuotes = renderHighlight("go", go, go.indexOf("\""));
+  assert.equal((goQuotes.match(/<span class="syntax-string syntax-match">"<\/span>/g) || []).length, 2);
+  const goComment = renderHighlight("go", go, go.lastIndexOf("["));
+  assert.doesNotMatch(goComment, /syntax-match/);
 });
